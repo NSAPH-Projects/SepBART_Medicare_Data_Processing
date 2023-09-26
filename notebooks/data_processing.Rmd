@@ -1,0 +1,78 @@
+
+Running codes from data_processing.R
+
+```{r}
+
+file_name <- file.choose() # Choose the original data set
+data <- readRDS(file_name) # and name "data"
+data$dual <- as.integer(data$dual)
+
+attach(data)
+uniq_zip <- unique(zip) # Find unique zip codes
+num_zip_rep <- rep(NA, length(uniq_zip))
+data_prcd <- matrix(NA, nrow = length(uniq_zip), ncol=37) # Make a matrix (zip x variable) to store the processed data
+
+# aggregate the original data to zip code level
+for(zz in 1:length(uniq_zip)){
+  temp_subset <- data[data$zip==unique(zip)[zz],] # Find observations with the same zip code
+  data_prcd[zz,] <- c(
+    # Outcome: death rate = (dead)/(total person year)
+    death_rate = sum(temp_subset$dead)/sum(temp_subset$time_count), 
+    
+    # Covariates 
+    # NOTE: These are sample means of each covariate which would not represent true values.
+    #       It is more appropriate to calculate weighted averages, taking into account the number of individuals in each original unit.
+    pct_female = mean(temp_subset$sex-1), 
+    pct_dual = mean(temp_subset$dual),
+    t(apply(temp_subset[11:24],2,mean)),
+    
+    # Exposures (Multivariate Continuous)
+    # NOTE: We also need to figure out how to define exposures for each zip code.
+    t(apply(temp_subset[10],2,mean)), # pm2.5 ensemble
+    t(apply(temp_subset[24:41],2,mean)), 
+    uniq_zip[zz]
+    )
+  cat(zz, "\r")
+}
+
+colnames(data_prcd) <- c("death_rate", "pct_female", "pct_dual",
+                         dimnames(data[11:24])[[2]],
+                         dimnames(data[10])[[2]], 
+                         dimnames(data[24:41])[[2]], "zip")
+
+```
+
+More efficient code
+
+```{r}
+file_name <- file.choose()
+data <- readRDS(file_name)
+
+attach(data)
+data$dual <- as.integer(data$dual)
+uniq_zip <- unique(zip)
+num_zips <- length(uniq_zip)
+
+# Calculate total person years and deaths per zip code
+total_person_years <- tapply(time_count, zip, sum)
+total_deaths <- tapply(dead, zip, sum)
+
+# Calculate covariate means for each zip code
+covariate_means <- aggregate(data[, c("sex", "dual", names(data)[11:24])], by = list(zip), FUN = mean)
+
+# Calculate exposure means for each zip code
+exposure_means_pm25 <- aggregate(data[, 10], by = list(zip), FUN = mean)
+exposure_means_other <- aggregate(data[, 24:41], by = list(zip), FUN = mean)
+
+# Calculate death rates for each zip code
+death_rates <- total_deaths / total_person_years
+
+# Combine all the calculated data into a single matrix
+data_prcd2 <- cbind(death_rate = death_rates, covariate_means[, -1], exposure_means_pm25[, -1], exposure_means_other[, -1], uniq_zip)
+
+# Set column names for the processed data matrix
+colnames(data_prcd2) <- c("death_rate", "pct_female", "pct_dual", names(data)[11:24], "pm25_ensemble", names(data)[24:41], "zip")
+
+
+
+```

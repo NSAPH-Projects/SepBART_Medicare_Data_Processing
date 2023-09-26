@@ -1,0 +1,538 @@
+Notebook to Create Dataset
+
+```{r}
+library(readr)
+
+# File path to the RDS file
+file_path <- "../data/input/aggregated_2000-2016_medicare_mortality_pm25_zip/aggregate_data.RDS"
+
+# Read the data from the RDS file
+data <- readRDS(file_path)
+
+head(data)
+# entry_age_break --> year of the beneficiaries at that year 
+# true individual age --> need to look at individual level data
+
+
+```
+
+
+
+```{r}
+# Initialize an empty list to store data frames for each year
+data_list <- list()
+
+# Loop through years from 2000 to 2016
+for (year in 2000:2016) {
+  # File path to the RDS file for the current year
+  file_path <- paste0("../data/input/PM25_v2/annual/", year, ".rds")
+  
+  # Read the data from the RDS file and store it in the data frame 'annual_pm25'
+  annual_pm25 <- readRDS(file_path)
+  
+  # Add a new column named "year" with the value for the current year
+  annual_pm25$year <- year
+  
+  # Convert the "ZIP" column to lowercase "zip"
+  colnames(annual_pm25)[colnames(annual_pm25) == "ZIP"] <- "zip"
+  
+  # Append the data frame to the list
+  data_list[[year]] <- annual_pm25
+}
+
+# Combine all data frames into a single data frame named 'joel_schwartz_pm25'
+joel_schwartz_pm25 <- do.call(rbind, data_list)
+
+# Display the first few rows of the combined data frame
+tail(joel_schwartz_pm25)
+
+```
+
+```{r}
+# Save joel_schwartz_pm25 data frame as an RDS file
+file_path_output <- "../data/intermediate/joel_schwartz_pm25.Rds"
+saveRDS(joel_schwartz_pm25, file = file_path_output)
+```
+
+
+PM 25 components data 
+
+```{r}
+file_path <- paste0("../data/input/PM25_components/", 2000, ".rds")
+  
+# Read the data from the RDS file and store it in the data frame 'annual_pm25'
+annual_pm25_components <- readRDS(file_path)
+head(annual_pm25_components)
+```
+
+```{r}
+# Initialize an empty list to store data frames for each year
+data_list <- list()
+
+# Loop through years from 2000 to 2016
+for (year in 2000:2016) {
+  # File path to the RDS file for the current year
+  file_path <- paste0("../data/input/PM25_components/", year, ".rds")
+  
+  # Read the data from the RDS file and store it in the data frame 'annual_pm25'
+  annual_pm25_components <- readRDS(file_path)
+  
+  # Convert the "ZIP" column to lowercase "zip"
+  colnames(annual_pm25_components)[colnames(annual_pm25_components) == "ZIP"] <- "zip"
+  # Add a new column named "year" with the value for the current year
+  annual_pm25_components$year <- year
+  
+  # Append the data frame to the list
+  data_list[[year]] <- annual_pm25_components
+}
+
+# Combine all data frames into a single data frame named 'joel_schwartz_pm25'
+joel_schwartz_pm25_components <- do.call(rbind, data_list)
+
+# Display the first few rows of the combined data frame
+tail(joel_schwartz_pm25_components)
+
+# Save joel_schwartz_pm25_components data frame as an RDS file
+file_path_output <- "../data/intermediate/joel_schwartz_pm25_components.Rds"
+saveRDS(joel_schwartz_pm25_components, file = file_path_output)
+```
+
+Annual O3 
+
+
+```{r}
+# Initialize an empty list to store data frames for each year
+data_list <- list()
+
+# Loop through years from 2000 to 2016
+for (year in 2000:2016) {
+  # File path to the RDS file for the current year
+  file_path <- paste0("../data/input/O3_v2/annual/", year, ".rds")
+  #~/data_processing/SepBART_Medicare_Analysis_Code/data/input/O3_v2/annual
+  
+  # Read the data from the RDS file and store it in the data frame 'annual_pm25'
+  annual_O3 <- readRDS(file_path)
+  
+  # Convert the "ZIP" column to lowercase "zip"
+  colnames(annual_O3)[colnames(annual_O3) == "ZIP"] <- "zip"
+  
+  # Add a new column named "year" with the value for the current year
+  annual_O3$year <- year
+  
+  # Append the data frame to the list
+  data_list[[year]] <- annual_O3
+}
+
+# Combine all data frames into a single data frame named 'joel_schwartz_pm25'
+joel_schwartz_annual_O3 <- do.call(rbind, data_list)
+
+# Display the first few rows of the combined data frame
+tail(joel_schwartz_annual_O3)
+
+# Save joel_schwartz_annual_O3 data frame as an RDS file
+file_path_output <- "../data/intermediate/joel_schwartz_annual_O3.Rds"
+saveRDS(joel_schwartz_annual_O3, file = file_path_output)
+```
+
+
+Randall Martin Absolute PM25
+
+
+```{r}
+# Initialize an empty list to store data frames for each year
+data_list <- list()
+
+# Loop through years from 2000 to 2016
+for (year in 2000:2016) {
+  # File path to the CSV file for the current year
+  file_path <- paste0(
+    "../data/input/pm25_components_randall_martin/absolute/V4NA03_PM25_NA_", 
+    year, "01_", year, "12-RH35_zcta.csv.gz"
+  )
+  
+  # Read the data from the CSV file and store it in the data frame
+  pm25_data <- read.csv(file_path)
+  
+  # Convert the "Year" column to lowercase "year"
+  colnames(pm25_data)[colnames(pm25_data) == "Year"] <- "year"
+  
+  # Append the data frame to the list
+  data_list[[year]] <- pm25_data
+}
+
+# Combine all data frames into a single data frame
+randall_martin_absolute_pm25 <- do.call(rbind, data_list)
+
+# Display the last few rows of the combined data frame
+tail(randall_martin_absolute_pm25)
+
+# Save the combined data frame as an RDS file
+file_path_output <- "../data/intermediate/randall_martin_absolute_pm25.Rds"
+saveRDS(randall_martin_absolute_pm25, file = file_path_output)
+
+```
+
+
+Merging the data
+
+```{r}
+# Load the required libraries (if not already installed)
+# install.packages("dplyr")
+library(dplyr)
+
+
+# File paths for the RDS files
+file_path_pm25 <- "../data/intermediate/joel_schwartz_pm25.Rds"
+file_path_o3 <- "../data/intermediate/joel_schwartz_annual_O3.Rds"
+file_path_components <- "../data/intermediate/joel_schwartz_pm25_components.Rds"
+
+# Read the RDS files
+joel_schwartz_pm25 <- readRDS(file_path_pm25)
+joel_schwartz_o3 <- readRDS(file_path_o3)
+joel_schwartz_components <- readRDS(file_path_components)
+
+# Join the dataframes based on "zip" and "year" columns
+merged_data <- data %>%
+  left_join(joel_schwartz_pm25, by = c("zip", "year")) %>%
+  left_join(joel_schwartz_o3, by = c("zip", "year")) %>%
+  left_join(joel_schwartz_components, by = c("zip", "year"))
+
+tail(merged_data)
+
+```
+
+
+```{r}
+
+# removing unwanted columns
+merged_data <- merged_data %>%
+  select(-region, -STATE.x, -STATE.y)
+head(merged_data)
+```
+
+```{r}
+# Save the merged dataframe as an RDS file
+file_path_output <- "../data/intermediate/merged_data_medicare_exposures.Rds"
+saveRDS(merged_data, file = file_path_output)
+
+```
+
+save different zip code, and year to different file
+
+```{r}
+file_path <- "../data/intermediate/merged_data_medicare_exposures.Rds"
+merged_data_medicare_exposures <- readRDS(file_path)
+
+library(dplyr)
+library(fs)  # For file path manipulation
+
+# Specify the output directory
+output_directory <- "../data/intermediate/census_exposure"
+
+# Create the output directory if it doesn't exist
+dir_create(output_directory)
+
+# Group data by "zip" and "year", and extract the first value of specified columns
+grouped_data <- merged_data_medicare_exposures %>%
+  group_by(zip, year) %>%
+  summarise(
+    pm25_ensemble = first(pm25_ensemble),
+    mean_bmi = first(mean_bmi),
+    smoke_rate = first(smoke_rate),
+    hispanic = first(hispanic),
+    pct_blk = first(pct_blk),
+    medhouseholdincome = first(medhouseholdincome),
+    medianhousevalue = first(medianhousevalue),
+    poverty = first(poverty),
+    education = first(education),
+    popdensity = first(popdensity),
+    pct_owner_occ = first(pct_owner_occ),
+    summer_tmmx = first(summer_tmmx),
+    winter_tmmx = first(winter_tmmx),
+    summer_rmax = first(summer_rmax),
+    winter_rmax = first(winter_rmax),
+    # Add the rest of the columns you need
+    pm25 = first(pm25),
+    ozone = first(ozone),
+    br = first(br),
+    ca = first(ca),
+    cu = first(cu),
+    ec = first(ec),
+    fe = first(fe),
+    k = first(k),
+    nh4 = first(nh4),
+    ni = first(ni),
+    no3 = first(no3),
+    oc = first(oc),
+    pb = first(pb),
+    si = first(si),
+    so4 = first(so4),
+    v = first(v),
+    z = first(z)
+  )
+
+# Loop over unique years and save the grouped dataframes
+for (year_current in unique(grouped_data$year)) {
+  year_grouped_data <- grouped_data %>%
+    filter(year == year_current)
+  # Create the output file path for the current year
+  output_file <- fs::path(output_directory, paste0("aggregate_data_", year_current, ".rds"))
+
+  # Save the grouped dataframe as an RDS file
+  saveRDS(year_grouped_data, output_file)
+  
+  # Print a message indicating the completion of each loop
+  cat("Saved data for year:", year_current, "\n")
+}
+
+
+
+```
+
+
+
+Randall Martin pm25 components data
+
+```{r}
+# Define the file path
+file_path <- "../data/input/pm25_components_randall_martin/components/V4NA03_PM25_NA_200001_200012-RH35_zcta.csv.gz"
+
+# Read the compressed CSV file
+data <- read.csv(file_path, header = TRUE)
+
+# Specify the columns that need the prefix
+columns_to_prefix <- c("PM25", "BC", "NH4", "NIT", "OM", "SO4", "SOIL", "SS")
+
+# Add the prefix to the specified columns
+for (column in columns_to_prefix) {
+  new_column_name <- paste("randall_martin_", column, sep = "")
+  data[new_column_name] <- data[column]
+}
+
+# Delete the original columns
+data <- data[, -match(columns_to_prefix, colnames(data))]
+
+head(data)
+
+```
+
+```{r}
+# Define the file path
+file_path2 <- "../data/input/zip2zcta_master_xwalk/zip2zcta_master_xwalk.csv"
+
+# Read the compressed CSV file
+data2 <- read.csv(file_path2, header = TRUE)
+data2 <- data2[c("zip", "zcta")]
+
+# Display the first few rows of the data
+head(data2)
+```
+Merge data by zcta to get the zip code (zcta is larger than zip code)
+
+```{r}
+# Join data and data2 based on the zcta column
+merged_data <- left_join(data, data2, by = "zcta")
+
+head(merged_data)
+
+
+# Specify the output directory
+output_directory <- "../data/intermediate/randall_martin_zip"
+
+# Create the output directory if it doesn't exist
+dir_create(output_directory)
+
+# Loop over unique years and save the grouped dataframes
+for (year_current in unique(merged_data$Year)) {
+  year_grouped_data <- grouped_data %>%
+    filter(year == year_current)
+  # Create the output file path for the current year
+  output_file <- fs::path(output_directory, paste0("pm_components_rm_", year_current, ".rds"))
+
+  # Save the grouped dataframe as an RDS file
+  saveRDS(year_grouped_data, output_file)
+  
+  # Print a message indicating the completion of each loop
+  cat("Saved data for year:", year_current, "\n")
+}
+
+```
+
+merging all code by year:
+
+```{r}
+library(dplyr)
+library(fs)  # For file path manipulation
+
+# Loop through the years from 2000 to 2016
+for (year in 2000:2016) {
+  # Define the file path for the CSV file
+  csv_file_path <- fs::path("../data/input/pm25_components_randall_martin/components",
+                            sprintf("V4NA03_PM25_NA_%d01_%d12-RH35_zcta.csv.gz", year, year))
+
+  # Read the compressed CSV file
+  data <- read.csv(csv_file_path, header = TRUE)
+
+  # Specify the columns that need the prefix
+  columns_to_prefix <- c("PM25", "BC", "NH4", "NIT", "OM", "SO4", "SOIL", "SS")
+
+  # Add the prefix to the specified columns
+  for (column in columns_to_prefix) {
+    new_column_name <- paste("randall_martin_", column, sep = "")
+    data[new_column_name] <- data[column]
+  }
+
+  # Delete the original columns
+  data <- data[, -match(columns_to_prefix, colnames(data))]
+
+  # Define the file path for data2
+  csv_file_path2 <- "../data/input/zip2zcta_master_xwalk/zip2zcta_master_xwalk.csv"
+
+  # Read the CSV file for data2
+  data2 <- read.csv(csv_file_path2, header = TRUE)
+  data2 <- data2[c("zip", "zcta")]
+
+  # Join data and data2 based on the zcta column
+  merged_data <- left_join(data, data2, by = "zcta")
+
+  # Specify the output directory for each year
+  output_directory <- fs::path("../data/intermediate/randall_martin_zip")
+  dir_create(output_directory)
+
+  # Create the output file path for the current year
+  output_file <- fs::path(output_directory, sprintf("pm_components_rm_%d.rds", year))
+
+  # Save the merged_data as an RDS file
+  saveRDS(merged_data, output_file)
+  
+  # Print a message indicating the completion of the current year
+  cat("Saved data for year:", year, "\n")
+}
+
+```
+
+
+
+
+
+Code	Code value
+0	Unknown
+1	White
+2	Black
+3	Other
+4	Asian
+5	Hispanic
+6	North American Native
+
+
+```{r}
+library(fst)
+library(dplyr)
+library(fs)  # For file path manipulation
+
+# Specify the years you want to process
+years <- 1999:2016
+
+# Map original race codes to labels
+race_labels <- c("Unknown", "White", "Black", "Other", "Asian", "Hispanic", "North American Native")
+
+# Specify the output directory
+output_directory <- "../data/intermediate/zipcode_medicare"
+
+columns_to_load <- c(
+  "zip", "year", "qid", "sex",
+  "race", "age", "dual", "death"
+)
+
+# Create the output directory if it doesn't exist
+dir_create(output_directory)
+
+# Loop over each year
+for (year in years) {
+  # Define the file path for the current year
+  file_path <- fs::path(paste0("../data/input/merged_by_year_v2/confounder_exposure_merged_nodups_health_", year, ".fst"))
+
+  # Read only the specified columns from the FST file
+  data <- read_fst(file_path, columns = columns_to_load)
+
+  # Create a new column with mapped race labels
+  data$race_label <- race_labels[data$race + 1]
+
+  # Calculate various statistics grouped by zipcode
+  statistics <- data %>%
+    group_by(zip) %>%
+    summarise(
+      total_count = n(),
+      female_percentage = mean(sex == 2) * 100,
+      dual_percentage = mean(dual == 1) * 100,
+      mean_age = mean(age),
+      death_rate = sum(death) / total_count * 100,
+      percentage_race_labelAsian = mean(race_label == "Asian") * 100,
+      percentage_race_labelBlack = mean(race_label == "Black") * 100,
+      percentage_race_labelOther = mean(race_label == "Other") * 100,
+      percentage_race_labelWhite = mean(race_label == "White") * 100,
+      percentage_race_labelHispanic = mean(race_label == "Hispanic") * 100,
+      percentage_race_labelNorth_American_Native = mean(race_label == "North American Native") * 100
+    )
+
+  # Create the output file path for the current year
+  output_file <- fs::path(output_directory, paste0("zipcode_grouped_medicare_", year, ".rds"))
+
+  # Save the statistics dataframe as an RDS file
+  saveRDS(statistics, output_file)
+}
+
+
+```
+
+
+
+
+
+
+```{r}
+
+
+```
+
+final merge all files
+
+```{r}
+library(dplyr)
+library(dplyr)
+
+# Loop through the years from 2000 to 2016
+for (year in 2000:2016) {
+  # Define the file paths for each year
+  file_path1 <- fs::path("../data/intermediate/census_exposure", sprintf("aggregate_data_%d.rds", year))
+  file_path2 <- fs::path("../data/intermediate/randall_martin_zip", sprintf("pm_components_rm_%d.rds", year))
+  file_path3 <- fs::path("../data/intermediate/zipcode_medicare", sprintf("zipcode_grouped_medicare_%d.rds", year))
+
+  # Load file1
+  loaded_data1 <- readRDS(file_path1)
+
+  # Load file2
+  loaded_data2 <- readRDS(file_path2)
+  loaded_data2$zip <- sprintf("%05d", loaded_data2$zip)  # Format zip as 5-digit character
+
+  # Load file3
+  loaded_data3 <- readRDS(file_path3)
+  loaded_data3$zip <- sprintf("%05d", loaded_data3$zip)  # Format zip as 5-digit character
+
+  # Perform inner joins on loaded_data1, loaded_data2, and loaded_data3 by zip
+  merged_data <- inner_join(loaded_data1, loaded_data2, by = "zip") %>%
+    inner_join(loaded_data3, by = "zip")
+
+  # Specify the output file path for each year
+  output_file_path <- fs::path("../data/intermediate/preprocessed_data", sprintf("all_merged_%d.rds", year))
+
+  # Save the merged data as an RDS file
+  saveRDS(merged_data, output_file_path)
+
+  # Print a message indicating the successful saving
+  cat("Merged data for year", year, "has been saved to:", output_file_path, "\n")
+}
+
+
+```
+
