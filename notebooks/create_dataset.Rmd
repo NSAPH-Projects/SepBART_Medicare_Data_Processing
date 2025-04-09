@@ -536,3 +536,18 @@ for (year in 2000:2016) {
 
 ```
 
+```{r}
+census_exposure <- read_rds("../data/intermediate/SepBART_data/census_exposure/aggregate_data_2000.rds")
+colnames(census_exposure)
+```
+
+```{r}
+pm_components_rm <- read_rds("../data/intermediate/SepBART_data/randall_martin_zip/pm_components_rm_2000.rds")
+colnames(pm_components_rm)
+```
+
+```{r}
+df <- read_rds("../data/intermediate/SepBART_data/preprocessed_data/all_merged_2000.rds")
+colnames(df)
+```
+
